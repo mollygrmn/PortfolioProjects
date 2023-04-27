@@ -1,0 +1,257 @@
+SELECT
+    *
+FROM 
+    Titanic.dbo.train;
+
+-- selecting data I want to use 
+
+SELECT 
+    PassengerId,
+    Survived,
+    Sex,
+    Pclass,
+    Age
+FROM 
+    dbo.train
+Order BY 3,4;
+
+-- Pclass 1 = upper, 2 = middle, 3 = lower
+-- survival 0 = No, 1 = yes
+
+SELECT Sex, Survived, COUNT(*) as count
+FROM dbo.train
+GROUP BY Sex, Survived;
+
+-- To see the survival rate of women I will check the total who survived and divide by total who didn't
+SELECT 
+    (SUM(CASE WHEN Sex = 'female' AND Survived = 1 THEN 1 ELSE 0 END) * 100.0) / COUNT(*) as women_survival_rate
+FROM dbo.train
+WHERE Sex = 'female';
+
+--Women have a 74.2% survival rate
+-- Now to check the men, I will use the same formula
+
+SELECT 
+    (SUM(CASE WHEN Sex = 'male' AND Survived = 1 THEN 1 ELSE 0 END) * 100.0) / COUNT(*) as men_survival_rate
+FROM dbo.train
+WHERE Sex = 'male';
+
+-- Men have a 18.9% survival rate 
+
+-- now I want to break it down by class to see what % of the women who survived were upper, middle or lower
+-- Create a CTE 
+WITH women_survival_rate AS (
+    SELECT 
+        (SUM(CASE WHEN Sex = 'female' AND Survived = 1 THEN 1 ELSE 0 END) * 100.0) / COUNT(*) as survival_rate
+    FROM dbo.train
+    WHERE Sex = 'female'
+)
+SELECT *
+FROM women_survival_rate;
+
+-- include the Pclass column
+WITH women_survival_rate AS (
+    SELECT 
+        Pclass,
+        (SUM(CASE WHEN Sex = 'female' AND Survived = 1 THEN 1 ELSE 0 END) * 100.0) / COUNT(*) as survival_rate
+    FROM dbo.train
+    WHERE Sex = 'female'
+    GROUP BY Pclass
+)
+SELECT *
+FROM women_survival_rate;
+
+-- the results return women in class 1(upper) have a 96.8% survival rate
+-- in class 2(middle) have a 92.1% survival rate
+-- and in class 3(lower) have a 50% survival rate 
+
+-- now I will repeat for men 
+WITH male_survival_rate AS (
+    SELECT 
+        Pclass,
+        (SUM(CASE WHEN Sex = 'male' AND Survived = 1 THEN 1 ELSE 0 END) * 100.0) / COUNT(*) as male_survival_rate
+    FROM dbo.train
+    WHERE Sex = 'male'
+    GROUP BY Pclass
+)
+SELECT *
+FROM male_survival_rate;
+
+-- Men in class 1(upper) have a 36.88% survival rate
+-- in class 2(middle) have a 15.7% survival rate
+-- and class 3 (lower) a 13.5% survival rate
+
+
+-- Now I will check by age differences and use the case function to put the age into groups
+
+SELECT 
+    CASE 
+        WHEN Age < 18 THEN 'Under 18' 
+        WHEN Age >= 18 AND Age < 30 THEN '18-29'
+        WHEN Age >= 30 AND Age < 40 THEN '30-39'
+        WHEN Age >= 40 AND Age < 50 THEN '40-49'
+        WHEN Age >= 50 THEN '50 and over'
+        ELSE 'Unknown'
+    END AS age_group,
+    COUNT(*) as total_female_survivors
+FROM dbo.train
+WHERE Sex = 'female' AND Survived = 1
+GROUP BY 
+    CASE 
+        WHEN Age < 18 THEN 'Under 18' 
+        WHEN Age >= 18 AND Age < 30 THEN '18-29'
+        WHEN Age >= 30 AND Age < 40 THEN '30-39'
+        WHEN Age >= 40 AND Age < 50 THEN '40-49'
+        WHEN Age >= 50 THEN '50 and over'
+        ELSE 'Unknown'
+    END;
+
+-- repeat the same for male survivors 
+SELECT 
+    CASE 
+        WHEN Age < 18 THEN 'Under 18' 
+        WHEN Age >= 18 AND Age < 30 THEN '18-29'
+        WHEN Age >= 30 AND Age < 40 THEN '30-39'
+        WHEN Age >= 40 AND Age < 50 THEN '40-49'
+        WHEN Age >= 50 THEN '50 and over'
+        ELSE 'Unknown'
+    END AS age_group,
+    COUNT(*) as total_male_survivors
+FROM dbo.train
+WHERE Sex = 'male' AND Survived = 1
+GROUP BY 
+    CASE 
+        WHEN Age < 18 THEN 'Under 18' 
+        WHEN Age >= 18 AND Age < 30 THEN '18-29'
+        WHEN Age >= 30 AND Age < 40 THEN '30-39'
+        WHEN Age >= 40 AND Age < 50 THEN '40-49'
+        WHEN Age >= 50 THEN '50 and over'
+        ELSE 'Unknown'
+    END;
+
+-- Now I want to check the amount of parents/children related to the passenger who survived/didnt survive 
+SELECT 
+    Parch,
+    COUNT(*) AS total_passengers,
+    SUM(CASE WHEN Survived = 1 THEN 1 ELSE 0 END) AS total_survivors,
+    SUM(CASE WHEN Survived = 0 THEN 1 ELSE 0 END) AS total_non_survivors
+FROM dbo.train
+GROUP BY Parch
+ORDER BY Parch;
+
+
+-- Lets now explore where the passengers embarked from and their survival rates 
+-- C = Cherbourg, Q = Queenstown, S = Southampton
+
+SELECT 
+    Embarked, 
+    COUNT(*) AS total_passengers
+FROM dbo.train
+GROUP BY Embarked;
+
+-- Now to look at how many of those passengers were male and female
+
+SELECT 
+    Embarked, 
+    Sex,
+    COUNT(*) AS total_passengers
+FROM dbo.train
+GROUP BY Embarked, Sex;
+
+-- I will use a subquery to break it down further to see the survival rates 
+
+WITH survival_rates AS (
+    SELECT 
+        Embarked, 
+        Sex,
+        COUNT(*) AS total_passengers,
+        SUM(CASE WHEN Survived = 1 THEN 1 ELSE 0 END) AS total_survivors,
+        (SUM(CASE WHEN Survived = 1 THEN 1 ELSE 0 END) * 100.0) / COUNT(*) AS survival_rate
+    FROM dbo.train
+    GROUP BY Embarked, Sex
+)
+SELECT *
+FROM survival_rates
+
+
+
+
+
+
+
+
+
+Sex	Survived	count
+female	0	81
+male	0	468
+female	1	233
+male	1	109
+
+women_survival_rate
+74.203821656050
+
+men_survival_rate
+18.890814558058
+
+survival_rate
+74.203821656050
+
+Pclass	survival_rate
+1	96.808510638297
+2	92.105263157894
+3	50.000000000000
+
+Pclass	male_survival_rate
+1	36.885245901639
+2	15.740740740740
+3	13.544668587896
+
+age_group	total_female_survivors
+18-29	67
+30-39	50
+40-49	22
+50 and over	20
+Under 18	38
+Unknown	36
+
+age_group	total_male_survivors
+18-29	28
+30-39	23
+40-49	12
+50 and over	7
+Under 18	23
+Unknown	16
+
+Parch	total_passengers	total_survivors	total_non_survivors
+0	678	233	445
+1	118	65	53
+2	80	40	40
+3	5	3	2
+4	4	0	4
+5	5	1	4
+6	1	0	1
+
+Embarked	total_passengers
+S	644
+NULL	2
+Q	77
+C	168
+
+Embarked	Sex	total_passengers
+S	female	203
+NULL	female	2
+S	male	441
+Q	male	41
+C	male	95
+Q	female	36
+C	female	73
+
+Embarked	Sex	total_passengers	total_survivors	survival_rate
+S	female	203	140	68.965517241379
+NULL	female	2	2	100.000000000000
+S	male	441	77	17.460317460317
+Q	male	41	3	7.317073170731
+C	male	95	29	30.526315789473
+Q	female	36	27	75.000000000000
+C	female	73	64	87.671232876712
+
