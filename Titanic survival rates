@@ -1,3 +1,8 @@
+This dataset if from Kaggle Data Set, https://www.kaggle.com/competitions/titanic/data
+
+For this I wanted explore the rates of passengers based on Sex, Class Status, Age and Where they emabarked from.
+
+
 SELECT
     *
 FROM 
