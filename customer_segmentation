@@ -1,0 +1,119 @@
+-- Create a new database called 'customer_segmentation'
+-- Connect to the 'master' database to run this snippet
+USE master
+GO
+-- Create the new database if it does not exist already
+IF NOT EXISTS (
+    SELECT [name]
+        FROM sys.databases
+        WHERE [name] = N'customer_segmentation'
+)
+CREATE DATABASE customer_segmentation
+GO
+
+SELECT *
+FROM dbo.customer_data
+
+-- browsing through the data there is a lot of null values in minimum paymentss
+
+Select minimum_payments
+FROM dbo.customer_data
+WHERE minimum_payments IS NULL
+
+-- I want to update the nulls in this column to show as 0
+
+UPDATE dbo.customer_data
+SET minimum_payments = 0
+WHERE minimum_payments IS NULL;
+
+-- Now I want to the find the average balance of all the customers
+
+SELECT AVG(balance) AS avg_balance
+FROM dbo.customer_data 
+
+-- The average balance customers have in their accounts is $1564.47
+
+-- Find the total of all the balances
+
+SELECT SUM(balance) AS total_balance
+FROM dbo.customer_data
+
+-- The total balance of all customers is $14,002,049.70
+
+-- Now I want to see how many customers had more one off purchases then installments
+
+SELECT COUNT(*) AS customer_count, SUM(oneoff_purchases - installments_purchases) AS difference_sum
+FROM customer_data
+WHERE oneoff_purchases > installments_purchases;
+
+SELECT COUNT(*) AS oneoff_count
+FROM customer_data
+WHERE oneoff_purchases > 0
+  AND oneoff_purchases > installments_purchases
+  AND oneoff_purchases - installments_purchases > (
+    SELECT COUNT(*) AS installment_count
+    FROM customer_data
+    WHERE installments_purchases > 0
+  ) 
+
+-- There are 105 more on_off purchases then installment purchases
+
+-- Now I want to find the averages of the purchases, oneoff purchases and installments
+
+SELECT AVG(purchases) AS avg_purchases, AVG(oneoff_purchases) AS avg_oneoff_purchases, AVG(installments_purchases) AS avg_installments
+FROM customer_data
+
+-- Also round them to make it easier to read
+
+SELECT ROUND(AVG(purchases), 0) AS avg_purchases, ROUND(AVG(oneoff_purchases), 0) AS avg_oneoff_purchases, ROUND(AVG(installments_purchases), 0) AS avg_installments
+FROM customer_data
+
+-- I also want to see how the average tenure of customers
+
+SELECT AVG(tenure)
+FROM dbo.customer_data 
+
+-- The average tenure is about 11.52 years
+
+-- To find the average amount of credit used in a person account compared their balance 
+
+SELECT cust_id, credit_limit - balance AS credit_balance_diff
+FROM customer_data;
+
+SELECT AVG(credit_limit - balance) * 100 / AVG(credit_limit) AS avg_credit_balance_diff_percentage
+FROM customer_data
+
+-- The average amount is about 65%
+
+-- Now I want to see how many customers pay in full 
+
+SELECT COUNT(*) AS full_payment_count
+FROM customer_data
+WHERE prc_full_payment = 1;
+
+-- And find the % of customers that pay in full each month 
+
+SELECT AVG(prc_full_payment)*100 as percentage_full
+FROM customer_data
+
+-- Now we can also check how many customers have a minimun payment each month and the average minimum payment 
+
+SELECT COUNT(*) AS num_customers_with_minimum_payment
+FROM customer_data
+WHERE minimum_payments > 0 
+
+SELECT AVG(minimum_payments) AS avg_minimum
+FROM customer_data 
+
+
+
+
+
+
+
+
+
+
+
+
+
